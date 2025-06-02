@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
-using MV64e.GRZ;
 
-namespace MV64e.MTB.Test;
+namespace MV64e.GRZ.Test;
 
 public class MetadataTest
 {
