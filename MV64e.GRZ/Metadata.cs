@@ -1,3 +1,6 @@
+#pragma warning disable CS8765
+#pragma warning disable CS8618
+
 namespace MV64e.GRZ
 {
     using System;
