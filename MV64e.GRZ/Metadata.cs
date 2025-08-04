@@ -30,7 +30,7 @@ namespace MV64e.GRZ
         /// <summary>
         /// A unique identifier given by the Leistungserbringer for each donor of a single, duo or
         /// trio sequencing; the donorPseudonym needs to be identifiable by the Leistungserbringer in
-        /// case of changes to the consents by one of the donors. For Index patient use TanG.
+        /// case of changes to the consents by one of the donors. For Index patient use index.
         /// </summary>
         [JsonProperty("donorPseudonym", Required = Required.Always)]
         public string DonorPseudonym { get; set; }
@@ -298,8 +298,9 @@ namespace MV64e.GRZ
         public string FileChecksum { get; set; }
 
         /// <summary>
-        /// Path relative to the submission root, e.g.:
-        /// sequencing_data/patient_001/patient_001_dna.bam
+        /// Path relative to the submission files directory, e.g.:
+        /// 'patient_001/patient_001_dna.fastq.gz' if the file is located in <submission
+        /// root>/files/patient_001/patient_001_dna.fastq.gz
         /// </summary>
         [JsonProperty("filePath", Required = Required.Always)]
         public string FilePath { get; set; }
@@ -475,7 +476,10 @@ namespace MV64e.GRZ
         public string ClinicalDataNodeId { get; set; }
 
         /// <summary>
-        /// Health insurance providers
+        /// "GKV" gesetzliche Krankenversicherung, "PKV" private Krankenversicherung, "BG"
+        /// Berufsgenossenschaft, "SEL" Selbstzahler, "SOZ" Sozialamt, "GPV" gesetzliche
+        /// Pflegeversicherung, "PPV" private Pflegeversicherung, "BEI" Beihilfe, "SKT" Sonstige
+        /// Kostenträger, "UNK" Unbekannt
         /// </summary>
         [JsonProperty("coverageType", Required = Required.Always)]
         public CoverageType CoverageType { get; set; }
@@ -633,7 +637,10 @@ namespace MV64e.GRZ
     public enum SchemaVersion { The202501 };
 
     /// <summary>
-    /// Health insurance providers
+    /// "GKV" gesetzliche Krankenversicherung, "PKV" private Krankenversicherung, "BG"
+    /// Berufsgenossenschaft, "SEL" Selbstzahler, "SOZ" Sozialamt, "GPV" gesetzliche
+    /// Pflegeversicherung, "PPV" private Pflegeversicherung, "BEI" Beihilfe, "SKT" Sonstige
+    /// Kostenträger, "UNK" Unbekannt
     /// </summary>
     public enum CoverageType { Bei, Bg, Gkv, Gpv, Pkv, Ppv, Sel, Skt, Soz, Unk };
 
@@ -656,7 +663,7 @@ namespace MV64e.GRZ
     /// The options are: 'initial' for first submission, 'followup' is for followup submissions,
     /// 'addition' for additional submission, 'correction' for correction
     /// </summary>
-    public enum SubmissionType { Addition, Correction, Followup, Initial };
+    public enum SubmissionType { Addition, Correction, Followup, Initial, Test };
 
     public partial class Metadata
     {
@@ -1901,6 +1908,8 @@ namespace MV64e.GRZ
                     return SubmissionType.Followup;
                 case "initial":
                     return SubmissionType.Initial;
+                case "test":
+                    return SubmissionType.Test;
             }
             throw new Exception("Cannot unmarshal type SubmissionType");
         }
@@ -1926,6 +1935,9 @@ namespace MV64e.GRZ
                     return;
                 case SubmissionType.Initial:
                     serializer.Serialize(writer, "initial");
+                    return;
+                case SubmissionType.Test:
+                    serializer.Serialize(writer, "test");
                     return;
             }
             throw new Exception("Cannot marshal type SubmissionType");
