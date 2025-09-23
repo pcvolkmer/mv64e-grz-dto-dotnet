@@ -61,7 +61,7 @@ namespace MV64e.GRZ
         /// Research consents. Multiple declarations of consent are possible! Must be assigned to the
         /// respective data sets.
         /// </summary>
-        [JsonProperty("researchConsents", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("researchConsents", Required = Required.Always)]
         public List<ResearchConsent> ResearchConsents { get; set; }
     }
 
@@ -445,16 +445,22 @@ namespace MV64e.GRZ
     public partial class ResearchConsent
     {
         /// <summary>
+        /// Justification if no scope object is present.
+        /// </summary>
+        [JsonProperty("noScopeJustification", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
+        public NoScopeJustification? NoScopeJustification { get; set; }
+
+        /// <summary>
         /// Date of the delivery of the research consent in ISO 8601 format (YYYY-MM-DD)
         /// </summary>
-        [JsonProperty("presentationDate", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
-        public DateTimeOffset? PresentationDate { get; set; }
+        [JsonProperty("presentationDate", Required = Required.Always)]
+        public DateTimeOffset PresentationDate { get; set; }
 
         /// <summary>
         /// Schema version of de.medizininformatikinitiative.kerndatensatz.consent
         /// </summary>
-        [JsonProperty("schemaVersion", Required = Required.Always)]
-        public SchemaVersion SchemaVersion { get; set; }
+        [JsonProperty("schemaVersion", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
+        public SchemaVersion? SchemaVersion { get; set; }
 
         /// <summary>
         /// Scope of the research consent in JSON format following the MII IG Consent v2025 FHIR
@@ -463,7 +469,7 @@ namespace MV64e.GRZ
         /// and
         /// 'https://packages2.fhir.org/packages/de.medizininformatikinitiative.kerndatensatz.consent'.
         /// </summary>
-        [JsonProperty("scope", Required = Required.Always)]
+        [JsonProperty("scope", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, object> Scope { get; set; }
     }
 
@@ -632,6 +638,11 @@ namespace MV64e.GRZ
     public enum Relation { Brother, Child, Father, Index, Mother, Other, Sister };
 
     /// <summary>
+    /// Justification if no scope object is present.
+    /// </summary>
+    public enum NoScopeJustification { TechnicalReason, OrganizationalIssues, OtherPatientRelatedReason, PatientDidNotReturnConsentDocuments, PatientRefusesToSignConsent, PatientUnableToConsent };
+
+    /// <summary>
     /// Schema version of de.medizininformatikinitiative.kerndatensatz.consent
     /// </summary>
     public enum SchemaVersion { The202501 };
@@ -700,6 +711,7 @@ namespace MV64e.GRZ
                 DomainConverter.Singleton,
                 TypeEnumConverter.Singleton,
                 RelationConverter.Singleton,
+                NoScopeJustificationConverter.Singleton,
                 SchemaVersionConverter.Singleton,
                 CoverageTypeConverter.Singleton,
                 DiseaseTypeConverter.Singleton,
@@ -1635,6 +1647,67 @@ namespace MV64e.GRZ
         }
 
         public static readonly RelationConverter Singleton = new RelationConverter();
+    }
+
+    internal class NoScopeJustificationConverter : JsonConverter
+    {
+        public override bool CanConvert(Type t) => t == typeof(NoScopeJustification) || t == typeof(NoScopeJustification?);
+
+        public override object ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null) return null;
+            var value = serializer.Deserialize<string>(reader);
+            switch (value)
+            {
+                case "consent information cannot be submitted by LE due to technical reason":
+                    return NoScopeJustification.TechnicalReason;
+                case "consent is not implemented at LE due to organizational issues":
+                    return NoScopeJustification.OrganizationalIssues;
+                case "other patient-related reason":
+                    return NoScopeJustification.OtherPatientRelatedReason;
+                case "patient did not return consent documents":
+                    return NoScopeJustification.PatientDidNotReturnConsentDocuments;
+                case "patient refuses to sign consent":
+                    return NoScopeJustification.PatientRefusesToSignConsent;
+                case "patient unable to consent":
+                    return NoScopeJustification.PatientUnableToConsent;
+            }
+            throw new Exception("Cannot unmarshal type NoScopeJustification");
+        }
+
+        public override void WriteJson(JsonWriter writer, object untypedValue, JsonSerializer serializer)
+        {
+            if (untypedValue == null)
+            {
+                serializer.Serialize(writer, null);
+                return;
+            }
+            var value = (NoScopeJustification)untypedValue;
+            switch (value)
+            {
+                case NoScopeJustification.TechnicalReason:
+                    serializer.Serialize(writer, "consent information cannot be submitted by LE due to technical reason");
+                    return;
+                case NoScopeJustification.OrganizationalIssues:
+                    serializer.Serialize(writer, "consent is not implemented at LE due to organizational issues");
+                    return;
+                case NoScopeJustification.OtherPatientRelatedReason:
+                    serializer.Serialize(writer, "other patient-related reason");
+                    return;
+                case NoScopeJustification.PatientDidNotReturnConsentDocuments:
+                    serializer.Serialize(writer, "patient did not return consent documents");
+                    return;
+                case NoScopeJustification.PatientRefusesToSignConsent:
+                    serializer.Serialize(writer, "patient refuses to sign consent");
+                    return;
+                case NoScopeJustification.PatientUnableToConsent:
+                    serializer.Serialize(writer, "patient unable to consent");
+                    return;
+            }
+            throw new Exception("Cannot marshal type NoScopeJustification");
+        }
+
+        public static readonly NoScopeJustificationConverter Singleton = new NoScopeJustificationConverter();
     }
 
     internal class SchemaVersionConverter : JsonConverter
